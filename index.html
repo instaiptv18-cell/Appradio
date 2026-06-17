@@ -15,33 +15,44 @@ body{background:#000;color:#fff;padding-bottom:80px}
 .radio-card img{width:55px;height:55px;border-radius:8px;object-fit:cover}
 .radio-info{margin-left:12px;flex:1}
 .radio-name{font-size:16px;font-weight:bold}
+.radio-city{font-size:13px;color:#aaa;margin-top:2px}
+.radio-city .city-name{font-weight:bold;color:#ddd}
 .favorite-btn{font-size:22px;cursor:pointer;padding:5px}
 .player{position:fixed;bottom:0;left:0;width:100%;background:#111;padding:10px;display:flex;align-items:center;border-top:2px solid #333}
 .player img{width:45px;height:45px;border-radius:8px;object-fit:cover}
 .player-info{margin-left:10px;flex:1}
 .player-name{font-size:14px;color:#ccc}
 .player-name span{font-weight:bold;color:#ff5722}
+.player-city{font-size:12px;color:#888;margin-top:2px}
+.player-city .city-name{font-weight:bold;color:#aaa}
 .play-btn{background:#ff5722;border:none;color:#fff;width:50px;height:50px;border-radius:50%;font-size:20px;cursor:pointer}
 </style>
 </head>
 <body>
-<div class="header">📻 Rádio Online</div>
-<div class="section"><h2>⭐ Favoritas</h2><!-- ===== AVISO TEMPORÁRIO - REMOVA ESTE BLOCO APÓS 1 DIA ===== -->
-    <div class="temp-alert" id="tempAlert">
-        <span>📢</span>
-        <span><strong>Novidade!</strong> Adicionamos a rádio <strong id="newRadioName">(Rádio Difusora FM 96.9)</strong> — confira abaixo!</span>
-        <button class="close-alert" onclick="document.getElementById('tempAlert').style.display='none'">✕</button>
-    </div>
-    <!-- ===== FIM DO AVISO TEMPORÁRIO ===== --><div id="favoriteList"></div></div>
+<div class="header">📻 Rádio Online 🎧</div>
+<div class="section"><h2>⭐ Favoritas</h2><div id="favoriteList"></div></div>
 <div class="section"><h2>🎵 Todas as Rádios</h2><div id="radioList"></div></div>
-<div class="player"><img id="playerLogo" src=""><div class="player-info"><div class="player-name">🎧 Tocando agora:<br><span id="playerName">Nenhuma</span></div></div><button class="play-btn" onclick="togglePlay()">▶</button></div>
+<div class="player"><img id="playerLogo" src=""><div class="player-info"><div class="player-name">🎧 Tocando agora:<br><span id="playerName">Nenhuma</span><div class="player-city" id="playerCity"></div></div></div><button class="play-btn" onclick="togglePlay()">▶</button></div>
 <audio id="audio"></audio>
 <script>
 // ========== CONFIGURE SUAS RÁDIOS AQUI ==========
 const radios = [
-{nome:"Rádio Difusora FM 96.9",logo:"https://via.placeholder.com/55?text=Difusora",url:"https://radio.saopaulo01.com.br:10839/stream"},
-{nome:"Rádio Tiradentes FM",logo:"https://via.placeholder.com/55?text=Tiradentes",url:"https://servidor.stream/tiradentes"},
-{nome:"Rádio Norte Borba",logo:"https://via.placeholder.com/55?text=Norte",url:"https://servidor.stream/norte"}
+// Rádios originais (mantidas)
+{nome:"Liga FM 95.1", cidade:"(MANAUS)", logo:"https://smartradio.s3.amazonaws.com/uploads/station/vertical_logo/893717660/Manaus.png",url:"https://radio.saopaulo01.com.br:10839/stream"},
+{nome:"Liga FM 93.1", cidade:"(ITACOATIARA)", logo:"https://img.radios.com.br/radio/lg/radio287857_1781125063.jpg",url:"https://radio02.logicahost.com.br:7027/stream"},
+{nome:"Boas Novas 92.9 FM", cidade:"(ITAPIRANGA AM)", logo:"https://img.radios.com.br/radio/lg/radio32668_1756739204.jpg",url:"https://cast2.hoost.com.br:8609/stream"},
+// Novas rádios adicionadas
+{nome:"Radio Mix FM 100.7", cidade:"(MANAUS)", logo:"https://cdn.instant.audio/images/logos/radiosaovivo-net/mix-manaus.png",url:"https://24493.live.streamtheworld.com:443/MIXFM_MANAUS_SC"},
+{nome:"Rádio Mix FM 102.1", cidade:"(SÃO PAULO)", logo:"https://img.radios.com.br/radio/lg/radio13958_1536148361.jpeg",url:"https://27443.live.streamtheworld.com:443/MIXRIOAAC_SC?dist=radioscombr"},
+{nome:"Radio Difusora FM 96.9", cidade:"(MANAUS)", logo:"https://img.radios.com.br/radio/lg/radio12641_1684252698.jpg",url:"http://ss.enovanet.com.br:9300/stream/1/"},
+{nome:"Radio FM O Dia 93.1", cidade:"(MANAUS)", logo:"https://img.radios.com.br/radio/lg/radio8961_1706128416.jpeg",url:"https://shout35.crossradio.com.br:24076/stream"},
+{nome:"Rádio Furacão 2000", cidade:"(RIO DE JANEIRO)", logo:"https://img.radios.com.br/radio/lg/radio187667_1650319773.jpg",url:"https://servidor24-1.brlogic.com:7516/live"},
+{nome:"Rádio Elite Rock", cidade:"(SÃO PAULO)", logo:"https://img.radios.com.br/radio/lg/radio93525_1777219585.png",url:"https://streaming.radioempresabrasil.com.br/proxy/elitefm/stream"},
+{nome:"Rádio Guaçu 100.7 FM", cidade:"(TOLEDO/PR)", logo:"https://img.radios.com.br/radio/lg/radio13242_1752500993.png",url:"https://stm01.virtualcast.com.br:8034/guacutoledo"},
+{nome:"Rádio Massa 98.5 FM", cidade:"(TOLEDO/PR)", logo:"https://img.radios.com.br/radio/lg/radio210448_1709568143.jpg",url:"https://stm01.virtualcast.com.br:8174/massatoledo"},
+{nome:"Rádio Panorama 95.3 FM", cidade:"(ITACOATIARA AM)", logo:"https://img.radios.com.br/radio/lg/radio20010_1734385316.jpg",url:"http://stm45.srvstm.com:9510/stream"},
+//{nome:"Rádio Panorama 95.3 FM", cidade:"(ITACOATIARA AM)", logo:"https://img.radios.com.br/radio/lg/radio20010_1734385316.jpg",url:"http://stm45.srvstm.com:9510/stream"},
+{nome:"Rádio 105 FM", cidade:"JUNDIAÍ SP", logo:"https://img.radios.com.br/radio/lg/radio55_1752498849.png",url:"https://www.appradio.app:8010/stream"}
 ];
 // =================================================
 
@@ -54,8 +65,8 @@ function render(){
 let listaHtml="",favHtml="";
 radios.forEach((r,i)=>{
 let isFav=fav.includes(i);
-listaHtml+=`<div class="radio-card" onclick="playRadio(${i})"><img src="${r.logo}" onerror="this.src='https://via.placeholder.com/55?text=Radio'"><div class="radio-info"><div class="radio-name">${r.nome}</div></div><div class="favorite-btn" onclick="event.stopPropagation();toggleFav(${i})">${isFav?"❤️":"🤍"}</div></div>`;
-if(isFav) favHtml+=`<div class="radio-card" onclick="playRadio(${i})"><img src="${r.logo}" onerror="this.src='https://via.placeholder.com/55?text=Radio'"><div class="radio-info"><div class="radio-name">${r.nome}</div></div><div class="favorite-btn" onclick="event.stopPropagation();toggleFav(${i})">❤️</div></div>`;
+listaHtml+=`<div class="radio-card" onclick="playRadio(${i})"><img src="${r.logo}" onerror="this.src='https://via.placeholder.com/55?text=Radio'"><div class="radio-info"><div class="radio-name">${r.nome}</div><div class="radio-city"><span class="city-name">${r.cidade}</span></div></div><div class="favorite-btn" onclick="event.stopPropagation();toggleFav(${i})">${isFav?"❤️":"🤍"}</div></div>`;
+if(isFav) favHtml+=`<div class="radio-card" onclick="playRadio(${i})"><img src="${r.logo}" onerror="this.src='https://via.placeholder.com/55?text=Radio'"><div class="radio-info"><div class="radio-name">${r.nome}</div><div class="radio-city"><span class="city-name">${r.cidade}</span></div></div><div class="favorite-btn" onclick="event.stopPropagation();toggleFav(${i})">❤️</div></div>`;
 });
 document.getElementById("radioList").innerHTML=listaHtml;
 document.getElementById("favoriteList").innerHTML=favHtml||"<div style='text-align:center;padding:20px;color:#666'>💔 Nenhuma rádio favorita ainda<br><small>Clique no 🤍 para adicionar</small></div>";
@@ -73,6 +84,7 @@ audioElem.src=r.url;
 audioElem.play().catch(e=>console.log("Erro ao tocar"));
 document.getElementById("playerLogo").src=r.logo;
 document.getElementById("playerName").innerHTML=r.nome;
+document.getElementById("playerCity").innerHTML = `<span class="city-name">${r.cidade}</span>`;
 document.querySelector(".play-btn").innerHTML="⏸";
 }
 
