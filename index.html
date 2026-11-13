@@ -93,7 +93,7 @@ listaHtml+=`<div class="radio-card" onclick="playRadio(${i})"><img src="${r.logo
 if(isFav) favHtml+=`<div class="radio-card" onclick="playRadio(${i})"><img src="${r.logo}" onerror="this.src='https://via.placeholder.com/55?text=Radio'"><div class="radio-info"><div class="radio-name">${r.nome}</div><div class="radio-city"><span class="city-name">${r.cidade}</span></div></div><div class="favorite-btn" onclick="event.stopPropagation();toggleFav(${i})">❤️</div></div>`;
 });
 document.getElementById("radioList").innerHTML=listaHtml;
-document.getElementById("favoriteList").innerHTML=favHtml||"<div style='text-align:center;padding:20px;color:#666'>💔 Nenhuma rádio favorita ainda<br><small>Clique no 🤍 para adicionar</small></div>";
+document.getElementById("favoriteList").innerHTML=favHtml||"<div style='text-align:center;padding:20px;color:#666'> Nenhuma rádio favorita ainda<br><small>Clique no 🤍 para adicionar</small></div>";
 }
 
 function toggleFav(i){
