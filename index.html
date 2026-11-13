@@ -110,6 +110,9 @@ document.getElementById("playerLogo").src=r.logo;
 document.getElementById("playerName").innerHTML=r.nome;
 document.getElementById("playerCity").innerHTML = `<span class="city-name">${r.cidade}</span>`;
 document.querySelector(".play-btn").innerHTML="⏸";
+// Avisa o app Android qual rádio está tocando (para a notificação).
+// No navegador comum não existe AndroidRadio, então o try/catch evita erro.
+try{AndroidRadio.onRadioInfo(r.nome,r.cidade);}catch(e){}
 }
 
 function togglePlay(){
