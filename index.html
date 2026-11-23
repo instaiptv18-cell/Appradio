@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filtro de Lista IPTV</title>
+<style>
+  :root{--bg:#0f1220;--card:#181c30;--line:#2a3050;--txt:#e8eaf6;--mut:#9aa1c4;--acc:#5b8cff;--ok:#2ecc71;--bad:#ff5b6e}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:16px}
+  h1{font-size:22px;margin:8px 0 4px}
+  p.sub{color:var(--mut);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{background:transparent;color:var(--mut);border:1px solid var(--line);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:14px}
+  .tab.on{background:var(--acc);border-color:var(--acc);color:#fff}
+  label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+  input[type=text],input[type=password],textarea{width:100%;background:#0c0f1d;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:15px}
+  textarea{min-height:120px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+  input:focus,textarea:focus{outline:2px solid var(--acc);border-color:transparent}
+  button.b{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:10px 16px;font-size:15px;cursor:pointer;font-weight:600}
+  button.b.sec{background:#2a3050}
+  button.b:disabled{opacity:.5;cursor:default}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row>.grow{flex:1;min-width:140px}
+  details{margin-top:12px;color:var(--mut)}
+  summary{cursor:pointer}
+  #msg{margin-top:12px;font-size:14px;min-height:20px}
+  #msg.err{color:var(--bad)} #msg.ok{color:var(--ok)}
+  .hidden{display:none}
+  #cats{max-height:55vh;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:10px}
+  .cat{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+  .cat:last-child{border-bottom:0}
+  .cat:hover{background:#1f2440}
+  .cat input{width:18px;height:18px;flex:none}
+  .cat .n{flex:1;word-break:break-word}
+  .cat .c{color:var(--mut);font-size:13px;flex:none}
+  .stats{color:var(--mut);font-size:14px;margin-top:10px}
+  .radio{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+  .radio label{display:flex;align-items:center;gap:6px;margin:0;color:var(--txt);font-size:14px}
+  pre{background:#0c0f1d;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:220px;overflow:auto;font-size:12px;white-space:pre-wrap;word-break:break-all;margin:10px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Filtro de Lista IPTV</h1>
+  <p class="sub">Carregue sua lista, escolha as categorias e gere uma playlist menor.</p>
+
+  <!-- PASSO 1 -->
+  <div class="card" id="step1">
+    <div class="tabs">
+      <button class="tab on" data-t="url">Link da playlist</button>
+      <button class="tab" data-t="xtream">Servidor / Usuário / Senha</button>
+      <button class="tab" data-t="file">Arquivo ou texto</button>
+    </div>
+
+    <div id="t-url">
+      <label>Link da playlist (M3U / M3U8)</label>
+      <input type="text" id="m3uUrl" placeholder="http://servidor.com/get.php?username=...&password=...&type=m3u_plus">
+    </div>
+
+    <div id="t-xtream" class="hidden">
+      <label>Servidor (com porta, se houver)</label>
+      <input type="text" id="xHost" placeholder="http://servidor.com:8080">
+      <div class="row">
+        <div class="grow"><label>Usuário</label><input type="text" id="xUser" autocomplete="off"></div>
+        <div class="grow"><label>Senha</label><input type="password" id="xPass" autocomplete="off"></div>
+      </div>
+    </div>
+
+    <div id="t-file" class="hidden">
+      <label>Escolher arquivo .m3u / .m3u8 / .txt</label>
+      <input type="file" id="fileIn" accept=".m3u,.m3u8,.txt,audio/x-mpegurl,application/vnd.apple.mpegurl">
+      <label>ou cole o conteúdo da playlist</label>
+      <textarea id="pasteIn" placeholder="#EXTM3U&#10;#EXTINF:-1 group-title=&quot;Canais&quot;,Canal 1&#10;http://..."></textarea>
+    </div>
+
+    <details>
+      <summary>Opções avançadas (proxy CORS)</summary>
+      <p style="font-size:13px">Muitos servidores IPTV bloqueiam leitura direta pelo navegador (erro de CORS). Se der erro, baixe a lista e use "Arquivo ou texto", ou informe um proxy. O endereço da lista é adicionado ao final do proxy.</p>
+      <input type="text" id="proxy" placeholder="https://corsproxy.io/?url=">
+      <p style="font-size:12px">Atenção: com proxy, seu usuário e senha passam por um serviço de terceiros.</p>
+    </details>
+
+    <div class="row" style="margin-top:14px">
+      <button class="b" id="loadBtn">Carregar lista</button>
+    </div>
+    <div id="msg"></div>
+  </div>
+
+  <!-- PASSO 2 -->
+  <div class="card hidden" id="step2">
+    <div class="stats" id="stats"></div>
+    <div class="radio">
+      <label><input type="radio" name="mode" value="keep" checked> Manter só as selecionadas</label>
+      <label><input type="radio" name="mode" value="remove"> Remover as selecionadas</label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <input type="text" id="catSearch" class="grow" placeholder="Buscar categoria...">
+      <button class="b sec" id="selAll">Todas</button>
+      <button class="b sec" id="selNone">Nenhuma</button>
+      <button class="b sec" id="selInv">Inverter</button>
+    </div>
+    <div id="cats"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="b" id="okBtn">OK – gerar playlist</button>
+    </div>
+  </div>
+
+  <!-- PASSO 3 -->
+  <div class="card hidden" id="step3">
+    <div class="stats" id="outStats"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="b" id="dlBtn">Baixar .m3u</button>
+      <button class="b sec" id="copyBtn">Copiar texto</button>
+    </div>
+    <label>Nome do arquivo</label>
+    <input type="text" id="fname" value="playlist_filtrada.m3u">
+    <pre id="preview"></pre>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  let header = '#EXTM3U';
+  let entries = [];          // {extinf, extras[], url, group}
+  let groups = new Map();    // nome -> contagem
+  let outText = '';
+
+  // ---------- abas ----------
+  let tab = 'url';
+  document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+    tab = b.dataset.t;
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b));
+    ['url','xtream','file'].forEach(t => $('t-'+t).classList.toggle('hidden', t !== tab));
+  });
+
+  function msg(t, cls){ const m=$('msg'); m.textContent=t||''; m.className=cls||''; }
+
+  // ---------- parser M3U ----------
+  function parseM3U(text){
+    const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
+    const out = [];
+    let hdr = '#EXTM3U';
+    let cur = null, extras = [], grpFallback = '';
+    for (let raw of lines){
+      const l = raw.trim();
+      if (!l) continue;
+      if (l.toUpperCase().startsWith('#EXTM3U')){ hdr = l; continue; }
+      if (l.toUpperCase().startsWith('#EXTINF')){
+        // novo item; se havia um sem URL, descarta
+        cur = l; extras = []; grpFallback = ''; continue;
+      }
+      if (l.startsWith('#')){
+        if (cur !== null){
+          extras.push(l);
+          const m = l.match(/^#EXTGRP:(.*)$/i);
+          if (m) grpFallback = m[1].trim();
+        }
+        continue;
+      }
+      // linha de URL
+      if (cur !== null){
+        const m = cur.match(/group-title="([^"]*)"/i) || cur.match(/group-title='([^']*)'/i);
+        let g = (m ? m[1] : grpFallback).trim();
+        if (!g) g = 'Sem categoria';
+        out.push({extinf: cur, extras, url: l, group: g});
+        cur = null; extras = [];
+      }
+    }
+    return {hdr, items: out};
+  }
+
+  // ---------- carregar ----------
+  function buildFetchUrl(u){
+    const p = $('proxy').value.trim();
+    if (!p) return u;
+    return p + (p.includes('?') && p.endsWith('=') ? encodeURIComponent(u) : u);
+  }
+
+  async function fetchText(u){
+    const r = await fetch(buildFetchUrl(u));
+    if (!r.ok) throw new Error('O servidor respondeu com erro ' + r.status + '.');
+    return await r.text();
+  }
+
+  function xtreamUrl(){
+    let h = $('xHost').value.trim();
+    const u = encodeURIComponent($('xUser').value.trim());
+    const p = encodeURIComponent($('xPass').value.trim());
+    if (!h || !u || !p) throw new Error('Preencha servidor, usuário e senha.');
+    if (!/^https?:\/\//i.test(h)) h = 'http://' + h;
+    try { h = new URL(h).origin; } catch(e){ throw new Error('Endereço do servidor inválido.'); }
+    return h + '/get.php?username=' + u + '&password=' + p + '&type=m3u_plus&output=ts';
+  }
+
+  $('loadBtn').onclick = async () => {
+    const btn = $('loadBtn');
+    btn.disabled = true; msg('Carregando...');
+    $('step2').classList.add('hidden'); $('step3').classList.add('hidden');
+    try{
+      let text = '';
+      if (tab === 'url'){
+        const u = $('m3uUrl').value.trim();
+        if (!u) throw new Error('Cole o link da playlist.');
+        text = await fetchText(u);
+      } else if (tab === 'xtream'){
+        text = await fetchText(xtreamUrl());
+      } else {
+        const f = $('fileIn').files[0];
+        text = f ? await f.text() : $('pasteIn').value;
+        if (!text.trim()) throw new Error('Escolha um arquivo ou cole o conteúdo da playlist.');
+      }
+      const res = parseM3U(text);
+      if (!res.items.length) throw new Error('Nenhum canal encontrado. Verifique se é uma playlist M3U válida.');
+      header = res.hdr; entries = res.items;
+      groups = new Map();
+      for (const e of entries) groups.set(e.group, (groups.get(e.group)||0) + 1);
+      renderCats();
+      msg(entries.length.toLocaleString('pt-BR') + ' itens em ' + groups.size + ' categorias.', 'ok');
+      $('step2').classList.remove('hidden');
+      $('step2').scrollIntoView({behavior:'smooth'});
+    }catch(err){
+      let t = err.message || String(err);
+      if (err instanceof TypeError){
+        t = 'Não foi possível acessar o endereço. Causas comuns: o servidor bloqueia leitura pelo navegador (CORS), ou a página está em https e o servidor em http. Tente baixar a lista e usar "Arquivo ou texto", ou usar um proxy nas opções avançadas.';
+      }
+      msg(t, 'err');
+    }finally{ btn.disabled = false; }
+  };
+
+  // ---------- categorias ----------
+  function renderCats(){
+    const box = $('cats'); box.innerHTML = '';
+    const names = [...groups.keys()].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const frag = document.createDocumentFragment();
+    for (const n of names){
+      const lab = document.createElement('label');
+      lab.className = 'cat'; lab.dataset.name = n.toLowerCase();
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.value = n;
+      cb.onchange = updStats;
+      const s1 = document.createElement('span'); s1.className='n'; s1.textContent = n;
+      const s2 = document.createElement('span'); s2.className='c'; s2.textContent = groups.get(n).toLocaleString('pt-BR');
+      lab.append(cb, s1, s2); frag.appendChild(lab);
+    }
+    box.appendChild(frag);
+    $('catSearch').value = '';
+    updStats();
+  }
+  const cbs = () => [...$('cats').querySelectorAll('input[type=checkbox]')];
+  const visible = cb => !cb.closest('.cat').classList.contains('hidden');
+
+  function updStats(){
+    const sel = cbs().filter(c=>c.checked);
+    const total = sel.reduce((a,c)=>a+groups.get(c.value),0);
+    $('stats').textContent = groups.size + ' categorias • ' + sel.length + ' selecionada(s) (' + total.toLocaleString('pt-BR') + ' itens)';
+  }
+
+  $('catSearch').oninput = e => {
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll('#cats .cat').forEach(l => l.classList.toggle('hidden', q && !l.dataset.name.includes(q)));
+  };
+  $('selAll').onclick  = () => { cbs().filter(visible).forEach(c=>c.checked=true);  updStats(); };
+  $('selNone').onclick = () => { cbs().filter(visible).forEach(c=>c.checked=false); updStats(); };
+  $('selInv').onclick  = () => { cbs().filter(visible).forEach(c=>c.checked=!c.checked); updStats(); };
+
+  // ---------- gerar ----------
+  $('okBtn').onclick = () => {
+    const sel = new Set(cbs().filter(c=>c.checked).map(c=>c.value));
+    if (!sel.size){ alert('Selecione pelo menos uma categoria.'); return; }
+    const keep = document.querySelector('input[name=mode]:checked').value === 'keep';
+    const lines = [header];
+    let n = 0;
+    for (const e of entries){
+      if (sel.has(e.group) === keep){
+        lines.push(e.extinf);
+        for (const x of e.extras) lines.push(x);
+        lines.push(e.url);
+        n++;
+      }
+    }
+    if (!n){ alert('Nenhum item restou com essa seleção.'); return; }
+    outText = lines.join('\n') + '\n';
+    $('outStats').textContent = 'Nova playlist: ' + n.toLocaleString('pt-BR') + ' de ' + entries.length.toLocaleString('pt-BR') + ' itens.';
+    $('preview').textContent = lines.slice(0, 13).join('\n') + (lines.length > 13 ? '\n...' : '');
+    $('step3').classList.remove('hidden');
+    $('step3').scrollIntoView({behavior:'smooth'});
+  };
+
+  $('dlBtn').onclick = () => {
+    let name = $('fname').value.trim() || 'playlist_filtrada.m3u';
+    if (!/\.m3u8?$/i.test(name)) name += '.m3u';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([outText], {type:'audio/x-mpegurl'}));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  };
+
+  $('copyBtn').onclick = async () => {
+    try{ await navigator.clipboard.writeText(outText); $('copyBtn').textContent='Copiado!'; }
+    catch(e){ $('copyBtn').textContent='Não foi possível copiar'; }
+    setTimeout(()=>$('copyBtn').textContent='Copiar texto', 2000);
+  };
+})();
+</script>
+</body>
+</html>
